@@ -1,6 +1,7 @@
 # Generated Logs
 scrapyard.pdf
 scrapyard.txt
+pyvenv.cfg
 
 # Main (not important, you can create one just to run database.py functions)
 main.py
