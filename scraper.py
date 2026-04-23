@@ -83,6 +83,7 @@ def scrapText(output):
                     catStr = ''
                     attrIdx = 0
                     incList.append(inc)
+                    inc.display()
                     inc = Incident()
                 if (line.strip() == blacklist2[0]):
                     addLast = False
