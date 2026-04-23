@@ -25,6 +25,3 @@ jobs:
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: python -c "import database; database.updateDatabase()"
-        
-      - name: Show scraper.py contents
-        run: cat scraper.py
