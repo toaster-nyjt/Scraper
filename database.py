@@ -29,6 +29,7 @@ def setup():
             """)
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS PDFs (
+                    id      SERIAL PRIMARY KEY,
                     Url     TEXT,
                     Date    DATE
                 )
@@ -77,12 +78,12 @@ def addUrl(url):
                 cur.execute("""DELETE FROM Incidents
                             WHERE Date = %s
                             """, (date,))
+                data = (row for row in data if row[2] == date)
             else:
                 cur.execute("INSERT INTO PDFs (Url, Date) VALUES(%s, %s)", (url, date))
 
-            filtered_data = (row for row in data if row[2] == date)
             cur.executemany("INSERT INTO Incidents (Category, Location, Date, Time, Summary, Disposition) " \
-            "VALUES(%s, %s, %s, %s, %s, %s)", filtered_data)
+            "VALUES(%s, %s, %s, %s, %s, %s)", data)
 
 # Parses the date of a URL
 def getDate(url):
