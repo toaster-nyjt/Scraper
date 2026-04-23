@@ -31,6 +31,7 @@ def scrap(metal=None):
                 allIncData.extend(inc.getData() for inc in incList)
             except Exception as e:
                 print(f"An unknown error occurred while attempting to parse this pdf: {metal}")
+                
         return allIncData
     
 # Gets a list of the URLS of all published pdfs
@@ -72,56 +73,68 @@ def scrapText(output):
     incList = []
     attrIdx = -1
     addLast = True
+    
+    try:
+        # Iterate through lines
+        with open(output + ".txt", "r") as f:
+            for line in f:
+                # Checks for validity of current line and attribute index 
+                if (attrIdx == 6):
+                    catStr = ''
+                    attrIdx = 0
+                    incList.append(inc)
+                    inc = Incident()
+                if (line.strip() == blacklist2[0]):
+                    addLast = False
+                    break
+                if (line[0].isspace() and any(word in line for word in blacklist1)):
+                    continue
+                if any(word in line for word in blacklist2):
+                    continue
+                if (line.strip() == ""):
+                    continue
+                if (attrIdx == -1):
+                    catStr =''
+                    attrIdx = 0
+                    inc = Incident()
+                if (attrIdx == 4 and not(line[0].isspace() or line.find(reportList[4]) == 0)):
+                    setattr(inc, incAttrList[attrIdx], 
+                            (lineStr.split(":")[1].strip() if ":" in lineStr else lineStr))
+                    attrIdx += 1
 
-    # Iterate through lines
-    with open(output + ".txt", "r") as f:
-        for line in f:
-            # Checks for validity of current line and attribute index 
-            if (attrIdx == 6):
-                attrIdx = 0
-                incList.append(inc)
-                inc = Incident()
-            if (line.strip() == blacklist2[0]):
-                addLast = False
-                break
-            if (line[0].isspace() and any(word in line for word in blacklist1)):
-                continue
-            if any(word in line for word in blacklist2):
-                continue
-            if (line.strip() == ""):
-                continue
-            if (attrIdx == -1):
-                attrIdx = 0
-                inc = Incident()
-            if (attrIdx == 4 and not(line[0].isspace() or line.find(reportList[4]) == 0)):
-                setattr(inc, incAttrList[attrIdx], 
-                        (lineStr.split(":")[1].strip() if ":" in lineStr else lineStr))
-                attrIdx += 1
+                # Sets the attribute of the inc obj depending on current data proptery
+                if (attrIdx == 0):
+                    catStr += scrapTextHelper(line.strip())
+                    if (not scrapTextHelper(line.strip()).endswith("/")):
+                        setattr(inc, incAttrList[attrIdx], catStr)
+                        attrIdx += 1
+                elif (attrIdx == 1):
+                    setattr(inc, incAttrList[attrIdx], scrapTextHelper(line.strip()))
+                    attrIdx += 1
+                elif (attrIdx == 2 or attrIdx == 3):
+                    setattr(inc, incAttrList[attrIdx], line.split(reportList[attrIdx])[1].strip())
+                    attrIdx += 1
+                elif (attrIdx == 4 and line.find(reportList[attrIdx]) == 0):
+                    lineStr = line.split(reportList[attrIdx])[1].strip()
+                    lineStr = scrapTextHelper(lineStr)
+                elif (attrIdx == 4 and line[0].isspace()):
+                    lineStr += " " + line.split(blacklist1[0])[0].strip()
+                    lineStr = scrapTextHelper(lineStr)
+                elif (attrIdx == 5):
+                    lineStr = line.split(reportList[attrIdx])[1].strip()
+                    lineStr = scrapTextHelper(lineStr)
+                    setattr(inc, incAttrList[attrIdx], 
+                            lineStr.split(":")[1].strip() if ":" in lineStr else lineStr)
+                    attrIdx += 1
+                
+            #Add last incident
+            if addLast: incList.append(inc)
 
-            # Sets the attribute of the inc obj depending on current data proptery
-            if (attrIdx == 0 or attrIdx == 1):
-                setattr(inc, incAttrList[attrIdx], scrapTextHelper(line.strip()))
-                attrIdx += 1
-            elif (attrIdx == 2 or attrIdx == 3):
-                setattr(inc, incAttrList[attrIdx], line.split(reportList[attrIdx])[1].strip())
-                attrIdx += 1
-            elif (attrIdx == 4 and line.find(reportList[attrIdx]) == 0):
-                lineStr = line.split(reportList[attrIdx])[1].strip()
-                lineStr = scrapTextHelper(lineStr)
-            elif (attrIdx == 4 and line[0].isspace()):
-                lineStr += " " + line.split(blacklist1[0])[0].strip()
-                lineStr = scrapTextHelper(lineStr)
-            elif (attrIdx == 5):
-                lineStr = line.split(reportList[attrIdx])[1].strip()
-                lineStr = scrapTextHelper(lineStr)
-                setattr(inc, incAttrList[attrIdx], 
-                        lineStr.split(":")[1].strip() if ":" in lineStr else lineStr)
-                attrIdx += 1
-            
-        #Add last incident
-        if addLast: incList.append(inc)
-        # Reset default time    
-        Incident.isPM = False
+    except Exception as e:
+        print("Exception occured in the middle of a document proccess")
+    
+    # Reset default time    
+    Incident.isPM = False
 
     return incList
 
